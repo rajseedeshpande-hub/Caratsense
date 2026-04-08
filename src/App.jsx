@@ -26,7 +26,7 @@ const ICONS = [
 
 const TechEcosystemBg = () => {
   const nodeRefs = useRef([]);
-  const stateRef = useRef({ raf: null });
+  const stateRef = useRef({ mouse: { x: -9999, y: -9999 }, raf: null });
 
   useEffect(() => {
     // Initialize node state separate from react state for speed
@@ -48,9 +48,12 @@ const TechEcosystemBg = () => {
     const init = () => {}; // Placeholder if you still want a resize listener logic
     window.addEventListener('resize', init);
 
+    const onMouse = e => { stateRef.current.mouse = { x: e.clientX, y: e.clientY }; };
+    window.addEventListener('mousemove', onMouse);
 
     const draw = () => {
       const W = window.innerWidth, H = window.innerHeight;
+      const { mouse } = stateRef.current;
 
       const svgEl = window.__ACTIVE_WORKFLOW_SVG_ID ? document.getElementById(window.__ACTIVE_WORKFLOW_SVG_ID) : null;
       let structuredMode = false;
@@ -159,6 +162,16 @@ const TechEcosystemBg = () => {
              }
            });
 
+           // Cursor repel
+           const mdx = n.x - mouse.x;
+           const mdy = n.y - mouse.y;
+           const md = Math.sqrt(mdx*mdx + mdy*mdy);
+           if (md < 250 && md > 0) {
+             const f = Math.pow(1 - md/250, 1.5) * 2.0;
+             n.vx += (mdx/md) * f;
+             n.vy += (mdy/md) * f;
+           }
+
            const WALL = 40;
            if (n.x < WALL) n.vx += (WALL - n.x) * 0.02;
            if (n.x > W - WALL) n.vx -= (n.x - (W - WALL)) * 0.02;
@@ -216,6 +229,7 @@ const TechEcosystemBg = () => {
 
     return () => {
       cancelAnimationFrame(stateRef.current.raf);
+      window.removeEventListener('mousemove', onMouse);
       window.removeEventListener('resize', init);
     };
   }, []);
@@ -972,141 +986,96 @@ const SCENARIOS = [
   {
     id: "scen-1",
     label: "Tally / Busy Executive Dashboard",
-    description: "Multi-source ERP sync → normalization → ML anomaly detection → real-time owner dashboard with alerting.",
+    description: "Live P&L, sales, and inventory data pulled from Tally or Busy into a real-time owner dashboard.",
     nodes: [
-      { id: "n1",  label: "Tally ERP",   iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/postgresql.svg",    x: 60,  y: 80  },
-      { id: "n2",  label: "Busy ERP",    iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/mongodb.svg",       x: 60,  y: 200 },
-      { id: "n3",  label: "Sheets",      iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/googlesheets.svg",  x: 60,  y: 290 },
-      { id: "n4",  label: "ETL Layer",   iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/python.svg",        x: 230, y: 170 },
-      { id: "n5",  label: "Data Store",  iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/supabase.svg",      x: 400, y: 80  },
-      { id: "n6",  label: "ML Engine",   iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/openai.svg",        x: 400, y: 260 },
-      { id: "n7",  label: "Scheduler",   iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/n8n.svg",           x: 570, y: 170 },
-      { id: "n8",  label: "Dashboard",   iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/react.svg",         x: 750, y: 80  },
-      { id: "n9",  label: "Alerts",      iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/slack.svg",         x: 750, y: 260 },
-      { id: "n10", label: "Analytics",   iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/databricks.svg",    x: 920, y: 170 },
+      { id: "n1", label: "Client App", iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/n8n.svg", x: 120, y: 170 },
+      { id: "n2", label: "Router", iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/python.svg", x: 300, y: 170 },
+      { id: "n3", label: "Embedding", iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/openai.svg", x: 480, y: 80 },
+      { id: "n4", label: "Vector DB", iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/supabase.svg", x: 660, y: 80 },
+      { id: "n5", label: "LLM Core", iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/claude.svg", x: 480, y: 260 },
+      { id: "n6", label: "Analytics", iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/databricks.svg", x: 860, y: 80 },
+      { id: "n7", label: "Zendesk", iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/zendesk.svg", x: 860, y: 260 }
     ],
     paths: [
-      { id: "p1",  d: "M 100 80  C 150 80,  180 140, 200 170", type: "solid" },
-      { id: "p2",  d: "M 100 200 L 200 170",                   type: "solid" },
-      { id: "p3",  d: "M 100 290 C 150 290, 180 210, 200 170", type: "solid" },
-      { id: "p4",  d: "M 300 170 C 330 170, 360 80,  370 80",  type: "solid" },
-      { id: "p5",  d: "M 300 170 C 330 170, 360 260, 370 260", type: "solid" },
-      { id: "p6",  d: "M 470 80  C 510 80,  540 140, 540 170", type: "solid" },
-      { id: "p7",  d: "M 470 260 C 510 260, 540 200, 540 170", type: "solid" },
-      { id: "p8",  d: "M 470 80  C 530 80,  530 260, 470 260", type: "dash" }, /* ML feedback */
-      { id: "p9",  d: "M 640 170 C 670 170, 700 80,  720 80",  type: "solid" },
-      { id: "p10", d: "M 640 170 C 670 170, 700 260, 720 260", type: "solid" },
-      { id: "p11", d: "M 820 80  C 860 80,  880 140, 890 170", type: "solid" },
-      { id: "p12", d: "M 820 260 C 860 260, 880 200, 890 170", type: "solid" },
-      { id: "p13", d: "M 820 80  C 870 80,  870 260, 820 260", type: "dash" }, /* cross-alert */
+      { id: "p1", d: "M 190 170 L 230 170", type: "solid" },
+      { id: "p2", d: "M 370 170 C 410 170, 410 80, 410 80", type: "solid" },
+      { id: "p3", d: "M 370 170 C 410 170, 410 260, 410 260", type: "solid" },
+      { id: "p4", d: "M 550 80 L 590 80", type: "solid" },
+      { id: "p5", d: "M 730 80 C 780 80, 780 260, 550 260", type: "dash" }, /* Context injection */
+      { id: "p6", d: "M 730 80 L 790 80", type: "solid" },
+      { id: "p7", d: "M 550 260 C 700 260, 700 80, 790 80", type: "dash" }, /* Telemetry */
+      { id: "p8", d: "M 550 260 L 790 260", type: "solid" }
     ],
     signals: [
-      { pathId: "p1",  delay: 0,   dur: 0.9, color: "#00e5ff", type: "dot"    },
-      { pathId: "p2",  delay: 0.2, dur: 0.8, color: "#00e5ff", type: "dot"    },
-      { pathId: "p3",  delay: 0.4, dur: 0.9, color: "#00e5ff", type: "dot"    },
-      { pathId: "p4",  delay: 1.0, dur: 0.8, color: "#a078e6", type: "stream" },
-      { pathId: "p5",  delay: 1.0, dur: 0.8, color: "#a078e6", type: "stream" },
-      { pathId: "p6",  delay: 1.9, dur: 0.8, color: "#d4af37", type: "dot"    },
-      { pathId: "p7",  delay: 1.9, dur: 0.8, color: "#d4af37", type: "dot"    },
-      { pathId: "p8",  delay: 2.5, dur: 1.8, color: "#a078e6", type: "stream" },
-      { pathId: "p9",  delay: 2.8, dur: 0.8, color: "#00e5ff", type: "stream" },
-      { pathId: "p10", delay: 2.8, dur: 0.8, color: "#ff6b6b", type: "stream" },
-      { pathId: "p11", delay: 3.7, dur: 1.0, color: "#ffffff", type: "dot"    },
-      { pathId: "p12", delay: 3.7, dur: 1.0, color: "#ffffff", type: "dot"    },
-      { pathId: "p13", delay: 4.2, dur: 1.5, color: "#d4af37", type: "dash"   },
+      { pathId: "p1", delay: 0, dur: 1.0, color: "#00e5ff", type: "dot" },
+      { pathId: "p2", delay: 1.0, dur: 1.0, color: "#a078e6", type: "dot" },
+      { pathId: "p3", delay: 1.0, dur: 1.0, color: "#a078e6", type: "dot" },
+      { pathId: "p4", delay: 2.0, dur: 1.0, color: "#00e5ff", type: "dot" },
+      { pathId: "p5", delay: 2.5, dur: 2.0, color: "#d4af37", type: "stream" },
+      { pathId: "p6", delay: 3.5, dur: 1.5, color: "#ffffff", type: "dot" },
+      { pathId: "p7", delay: 3.0, dur: 1.5, color: "#ffffff", type: "dot" },
+      { pathId: "p8", delay: 4.5, dur: 1.5, color: "#00e5ff", type: "stream" }
     ]
   },
   {
     id: "scen-2",
-    label: "WhatsApp CRM & AI Order Bot",
-    description: "Inbound WhatsApp → NLP intent routing → CRM sync → automated fulfilment → delivery tracking & re-engagement.",
+    label: "WhatsApp CRM & Order Bot",
+    description: "Automated lead capture, follow-up sequences, and order management — all running on WhatsApp.",
     nodes: [
-      { id: "n1",  label: "WhatsApp",   iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/whatsapp.svg",      x: 60,  y: 170 },
-      { id: "n2",  label: "NLP Engine", iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/openai.svg",        x: 220, y: 80  },
-      { id: "n3",  label: "Intent Bot", iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/claude.svg",        x: 220, y: 260 },
-      { id: "n4",  label: "CRM Core",   iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/salesforce.svg",    x: 400, y: 80  },
-      { id: "n5",  label: "Order DB",   iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/postgresql.svg",    x: 400, y: 260 },
-      { id: "n6",  label: "Workflow",   iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/n8n.svg",           x: 580, y: 170 },
-      { id: "n7",  label: "Payments",   iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/stripe.svg",        x: 750, y: 80  },
-      { id: "n8",  label: "Logistics",  iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/amazonaws.svg",     x: 750, y: 260 },
-      { id: "n9",  label: "Analytics",  iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/databricks.svg",    x: 920, y: 170 },
+      { id: "n1", label: "Intake", iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/gmail.svg", x: 120, y: 170 },
+      { id: "n2", label: "Document AI", iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/amazonaws.svg", x: 300, y: 170 },
+      { id: "n3", label: "Validation", iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/python.svg", x: 480, y: 170 },
+      { id: "n4", label: "Salesforce", iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/salesforce.svg", x: 660, y: 80 },
+      { id: "n5", label: "Quickbooks", iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/quickbooks.svg", x: 660, y: 260 },
+      { id: "n6", label: "Alerting", iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/slack.svg", x: 860, y: 170 }
     ],
     paths: [
-      { id: "p1",  d: "M 100 170 C 140 170, 180 80,  190 80",  type: "solid" },
-      { id: "p2",  d: "M 100 170 C 140 170, 180 260, 190 260", type: "solid" },
-      { id: "p3",  d: "M 290 80  C 330 80,  360 80,  370 80",  type: "solid" },
-      { id: "p4",  d: "M 290 260 C 330 260, 360 260, 370 260", type: "solid" },
-      { id: "p5",  d: "M 290 80  C 340 80,  340 260, 290 260", type: "dash" }, /* NLP→Intent feedback */
-      { id: "p6",  d: "M 470 80  C 510 80,  550 140, 550 170", type: "solid" },
-      { id: "p7",  d: "M 470 260 C 510 260, 550 200, 550 170", type: "solid" },
-      { id: "p8",  d: "M 470 80  C 530 80,  530 260, 470 260", type: "dash" }, /* CRM→Order sync */
-      { id: "p9",  d: "M 650 170 C 680 170, 710 80,  720 80",  type: "solid" },
-      { id: "p10", d: "M 650 170 C 680 170, 710 260, 720 260", type: "solid" },
-      { id: "p11", d: "M 820 80  C 860 80,  880 140, 890 170", type: "solid" },
-      { id: "p12", d: "M 820 260 C 860 260, 880 200, 890 170", type: "solid" },
-      { id: "p13", d: "M 890 170 C 910 170, 920 80,  100 80",  type: "dash" }, /* re-engagement loop */
+      { id: "p1", d: "M 190 170 L 230 170", type: "solid" },
+      { id: "p2", d: "M 370 170 L 410 170", type: "solid" },
+      { id: "p3", d: "M 550 170 C 590 170, 590 80, 590 80", type: "solid" },
+      { id: "p4", d: "M 550 170 C 590 170, 590 260, 590 260", type: "solid" },
+      { id: "p5", d: "M 730 80 C 780 80, 780 170, 790 170", type: "dash" },
+      { id: "p6", d: "M 730 260 C 780 260, 780 170, 790 170", type: "dash" }
     ],
     signals: [
-      { pathId: "p1",  delay: 0,   dur: 0.8, color: "#25d366", type: "dot"    },
-      { pathId: "p2",  delay: 0.2, dur: 0.8, color: "#25d366", type: "dot"    },
-      { pathId: "p3",  delay: 0.9, dur: 0.8, color: "#00e5ff", type: "stream" },
-      { pathId: "p4",  delay: 0.9, dur: 0.8, color: "#a078e6", type: "stream" },
-      { pathId: "p5",  delay: 1.5, dur: 1.4, color: "#a078e6", type: "dash"   },
-      { pathId: "p6",  delay: 1.8, dur: 0.7, color: "#d4af37", type: "dot"    },
-      { pathId: "p7",  delay: 1.8, dur: 0.7, color: "#d4af37", type: "dot"    },
-      { pathId: "p8",  delay: 2.3, dur: 1.5, color: "#00e5ff", type: "stream" },
-      { pathId: "p9",  delay: 2.6, dur: 0.8, color: "#ffffff", type: "stream" },
-      { pathId: "p10", delay: 2.6, dur: 0.8, color: "#ff6b6b", type: "stream" },
-      { pathId: "p11", delay: 3.5, dur: 0.9, color: "#ffffff", type: "dot"    },
-      { pathId: "p12", delay: 3.5, dur: 0.9, color: "#ffffff", type: "dot"    },
-      { pathId: "p13", delay: 4.5, dur: 2.5, color: "#25d366", type: "dash"   },
+      { pathId: "p1", delay: 0, dur: 1.0, color: "#d4af37", type: "dot" },
+      { pathId: "p2", delay: 1.0, dur: 1.5, color: "#00e5ff", type: "dot" },
+      { pathId: "p3", delay: 2.5, dur: 1.0, color: "#a078e6", type: "stream" },
+      { pathId: "p4", delay: 2.5, dur: 1.0, color: "#a078e6", type: "stream" },
+      { pathId: "p5", delay: 3.5, dur: 1.5, color: "#ffffff", type: "dot" },
+      { pathId: "p6", delay: 3.5, dur: 1.5, color: "#ffffff", type: "dot" }
     ]
   },
   {
     id: "scen-3",
     label: "Inventory Intelligence Pipeline",
-    description: "Multi-warehouse ingestion → ML aging & demand forecast → auto-reorder signals → ERP write-back & owner alerts.",
+    description: "ML-based aging detection and demand forecasting for jewellery, textiles, and building materials.",
     nodes: [
-      { id: "n1",  label: "WH India",   iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/mongodb.svg",       x: 60,  y: 80  },
-      { id: "n2",  label: "WH Export",  iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/postgresql.svg",    x: 60,  y: 260 },
-      { id: "n3",  label: "Ingestor",   iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/python.svg",        x: 220, y: 170 },
-      { id: "n4",  label: "Data Lake",  iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/amazonaws.svg",     x: 390, y: 80  },
-      { id: "n5",  label: "ML Aging",   iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/openai.svg",        x: 390, y: 260 },
-      { id: "n6",  label: "Forecaster", iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/databricks.svg",    x: 560, y: 170 },
-      { id: "n7",  label: "Reorder",    iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/n8n.svg",           x: 730, y: 80  },
-      { id: "n8",  label: "ERP Write",  iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/redis.svg",         x: 730, y: 260 },
-      { id: "n9",  label: "Dashboard",  iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/react.svg",         x: 900, y: 80  },
-      { id: "n10", label: "WhatsApp",   iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/whatsapp.svg",      x: 900, y: 260 },
+      { id: "n1", label: "Scheduler", iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/n8n.svg", x: 120, y: 170 },
+      { id: "n2", label: "Agent LLM", iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/claude.svg", x: 300, y: 170 },
+      { id: "n3", label: "Scraper", iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/robotframework.svg", x: 480, y: 80 },
+      { id: "n4", label: "Processing", iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/python.svg", x: 480, y: 260 },
+      { id: "n5", label: "Data Sink", iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/googlesheets.svg", x: 660, y: 80 },
+      { id: "n6", label: "Ticketing", iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/jira.svg", x: 660, y: 260 },
+      { id: "n7", label: "Reporting", iconUrl: "https://cdn.jsdelivr.net/npm/simple-icons/icons/slack.svg", x: 860, y: 170 }
     ],
     paths: [
-      { id: "p1",  d: "M 100 80  C 150 80,  180 130, 190 170", type: "solid" },
-      { id: "p2",  d: "M 100 260 C 150 260, 180 210, 190 170", type: "solid" },
-      { id: "p3",  d: "M 290 170 C 320 170, 350 80,  360 80",  type: "solid" },
-      { id: "p4",  d: "M 290 170 C 320 170, 350 260, 360 260", type: "solid" },
-      { id: "p5",  d: "M 460 80  C 500 80,  530 130, 530 170", type: "solid" },
-      { id: "p6",  d: "M 460 260 C 500 260, 530 210, 530 170", type: "solid" },
-      { id: "p7",  d: "M 460 80  C 520 80,  520 260, 460 260", type: "dash" }, /* aging→forecast loop */
-      { id: "p8",  d: "M 630 170 C 660 170, 690 80,  700 80",  type: "solid" },
-      { id: "p9",  d: "M 630 170 C 660 170, 690 260, 700 260", type: "solid" },
-      { id: "p10", d: "M 800 80  C 840 80,  860 80,  870 80",  type: "solid" },
-      { id: "p11", d: "M 800 260 C 840 260, 860 260, 870 260", type: "solid" },
-      { id: "p12", d: "M 800 80  C 850 80,  850 260, 800 260", type: "dash" }, /* reorder→ERP feedback */
-      { id: "p13", d: "M 460 260 C 520 260, 680 170, 700 80",  type: "dash" }, /* ML→reorder shortcut */
+      { id: "p1", d: "M 190 170 L 230 170", type: "solid" },
+      { id: "p2", d: "M 370 170 C 410 170, 410 80, 410 80", type: "solid" },
+      { id: "p3", d: "M 550 80 C 600 80, 600 260, 410 260", type: "dash" },
+      { id: "p4", d: "M 550 80 L 590 80", type: "solid" },
+      { id: "p5", d: "M 550 260 L 590 260", type: "solid" },
+      { id: "p6", d: "M 730 80 C 780 80, 780 170, 790 170", type: "dash" },
+      { id: "p7", d: "M 730 260 C 780 260, 780 170, 790 170", type: "dash" }
     ],
     signals: [
-      { pathId: "p1",  delay: 0,   dur: 0.9, color: "#00e5ff", type: "dot"    },
-      { pathId: "p2",  delay: 0.3, dur: 0.9, color: "#00e5ff", type: "dot"    },
-      { pathId: "p3",  delay: 1.0, dur: 0.8, color: "#a078e6", type: "stream" },
-      { pathId: "p4",  delay: 1.0, dur: 0.8, color: "#a078e6", type: "stream" },
-      { pathId: "p5",  delay: 1.9, dur: 0.8, color: "#d4af37", type: "dot"    },
-      { pathId: "p6",  delay: 1.9, dur: 0.8, color: "#ff6b6b", type: "dot"    },
-      { pathId: "p7",  delay: 2.4, dur: 1.8, color: "#a078e6", type: "stream" },
-      { pathId: "p8",  delay: 2.8, dur: 0.8, color: "#d4af37", type: "stream" },
-      { pathId: "p9",  delay: 2.8, dur: 0.8, color: "#d4af37", type: "stream" },
-      { pathId: "p13", delay: 3.2, dur: 1.4, color: "#ff6b6b", type: "dash"   },
-      { pathId: "p10", delay: 3.7, dur: 0.8, color: "#ffffff", type: "dot"    },
-      { pathId: "p11", delay: 3.7, dur: 0.8, color: "#25d366", type: "dot"    },
-      { pathId: "p12", delay: 4.3, dur: 1.5, color: "#d4af37", type: "stream" },
+      { pathId: "p1", delay: 0, dur: 1.0, color: "#d4af37", type: "dot" },
+      { pathId: "p2", delay: 1.0, dur: 1.0, color: "#00e5ff", type: "dot" },
+      { pathId: "p3", delay: 2.0, dur: 1.5, color: "#a078e6", type: "stream" },
+      { pathId: "p4", delay: 2.0, dur: 1.0, color: "#00e5ff", type: "stream" },
+      { pathId: "p5", delay: 3.5, dur: 1.0, color: "#ffffff", type: "dot" },
+      { pathId: "p6", delay: 3.0, dur: 1.5, color: "#d4af37", type: "dot" },
+      { pathId: "p7", delay: 4.5, dur: 1.5, color: "#d4af37", type: "dot" }
     ]
   }
 ];
